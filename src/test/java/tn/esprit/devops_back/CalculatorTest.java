@@ -6,6 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class CalculatorTest {
     @Test
     void addTwoNumbers() {
-        assertEquals(6, new Calculator().add(2, 3));
+        assertEquals(5, new Calculator().add(2, 3));
     }
 }
