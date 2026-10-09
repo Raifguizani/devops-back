@@ -1,48 +1,39 @@
 pipeline {
     agent any
 
-    tools {
-        jdk 'JAVA_HOME'
-        maven 'M2_HOME'
-    }
-
-    triggers {
-        pollSCM('* * * * *')
-    }
-
     stages {
-        stage('Récupération du code') {
+        stage('GIT') {
             steps {
-                checkout scm
+                git branch: 'main', url: 'https://github.com/Raifguizani/devops-back.git'
             }
         }
 
-        stage('Tests unitaires') {
+        stage('Tests') {
             steps {
-                sh 'mvn clean test'
+                echo 'Tests unitaires non introduits pour le moment'
             }
-            post {
-                always {
-                    junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+        }
+
+        stage('SonarQube') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh 'mvn clean compile sonar:sonar -DskipTests'
                 }
             }
         }
 
-        stage('Création du livrable') {
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Package') {
             steps {
                 sh 'mvn package -DskipTests'
             }
-        }
-    }
-
-    post {
-        success {
-            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-        }
-        failure {
-            mail to: 'raifguizani10@gmail.com',
-                 subject: "ÉCHEC du build : ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: "Le build a échoué.\n\nConsulter les logs : ${env.BUILD_URL}console"
         }
     }
 }
